@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"github.com/vivcis/library-app/helpers"
 	"github.com/vivcis/library-app/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -14,40 +15,59 @@ type PostgresDb struct {
 	DB *gorm.DB
 }
 
-// Init sets up the postgres instance
-func (pdb *PostgresDb) Init(host, user, password, dbName, port string) error {
-	fmt.Println("connecting to database...")
+// SetUpDB sets up the postgres instance
+func (pdb *PostgresDb) SetUpDB(config *helpers.Config) (*gorm.DB, error) {
+	//fmt.Println("connecting to database...")
+	//
+	//dsn := fmt.Sprintf("host=%s user=%s password=%s dbName=%s port=%s sslmode=disable TimeZone=Africa/Lagos", host, user, password, dbName, port)
+	//var err error
+	//if os.Getenv("DATABASE_URL") != "" {
+	//	dsn = os.Getenv("DATABASE_URL")
+	//}
+	//db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
+	//
+	//if db == nil {
+	//	return fmt.Errorf("database was not initialized")
+	//} else {
+	//	fmt.Println("connected to database")
+	//}
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbName=%s port=%s sslmode=disable TimeZone=Africa/Lagos", host, user, password, dbName, port)
-	var err error
-	if os.Getenv("DATABASE_URL") != "" {
-		dsn = os.Getenv("DATABASE_URL")
+	var dsn string
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		dsn = fmt.Sprintf("host=%v user=%v password=%v dbname=%v port=%v sslmode=%v TimeZone=%v", config.DBHost, config.DBUser, config.DBPass, config.DBName, config.DBPort, config.DBMode, config.DBTimeZone)
+	} else {
+		dsn = databaseURL
 	}
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		return err
+		return nil, err
 	}
-
-	if db == nil {
-		return fmt.Errorf("database was not initialized")
-	} else {
-		fmt.Println("connected to database")
-	}
+	fmt.Println("Established database connection")
 
 	pdb.DB = db
-	err = pdb.PrePopulateTables()
-	if err != nil {
-		log.Println("error repopulating database", err)
-		return err
-	}
 
-	return nil
+	err = pdb.DB.AutoMigrate(&models.Register{}, &models.Book{}, &models.User{})
+	if err != nil {
+		log.Fatalf("migration error: %v", err)
+	}
+	//err = pdb.PrePopulateTables()
+	//if err != nil {
+	//	log.Println("error repopulating database", err)
+	//	return err
+	//}
+
+	return db, nil
 }
 
 func (pdb *PostgresDb) PrePopulateTables() error {
 	err := pdb.DB.AutoMigrate(&models.User{}, &models.Register{}, &models.Book{})
 	if err != nil {
-		return fmt.Errorf("error migrating data", err)
+		return fmt.Errorf("error migrating data: %v", err)
 	}
 	register := models.Register{
 		Model:        models.Model{},

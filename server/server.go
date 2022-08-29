@@ -18,10 +18,10 @@ func Start() error {
 	//Setting up the Postgres Database
 	var PDB = new(db.PostgresDb)
 	h := &handlers.Handler{DB: PDB}
-	err := PDB.Init(values.Host, values.User, values.Password, values.DbName, values.Port)
+	err, _ := PDB.SetUpDB(values.Host, values.User, values.Password, values.DbName, values.Port)
 	if err != nil {
 		log.Println("error trying to initialize", err)
-		return err
+		//return err
 	}
 	routes, port := router.SetupRouter(h)
 	err = routes.Run(":" + port)

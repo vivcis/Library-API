@@ -32,7 +32,7 @@ func SetupRouter(h *handlers.Handler) (*gin.Engine, string) {
 
 	apirouter.GET("/ping", handlers.PingHandler)
 
-	port := ":" + os.Getenv("PORT")
+	port := os.Getenv("PORT")
 	if port == ":" {
 		port = ":8081"
 	}
